@@ -1,0 +1,33 @@
+# CodeBuddy Project Template
+name = "allive-migration"
+description = "Allive Migration · 众生迁徙 - Vue 3 + Vite 生态模拟游戏"
+
+[instructions]
+welcome = """
+# Allive Migration · 众生迁徙 🐦🦋🐟
+
+一个基于 Vue 3 + Vite + TypeScript 的单屏网页生态模拟游戏。
+
+## 快速启动
+
+```bash
+npm install
+npm run dev
+```
+
+浏览器打开 http://localhost:5173 即可开始游戏。
+
+## 生产构建
+
+```bash
+npm run build
+npm run preview
+```
+
+## 游戏说明
+
+- 绘制迁徙路线连接节点，帮助物种完成迁徙
+- 随机生成地图节点和任务，每局体验不同
+- 6 种动物物种逐步解锁
+- 注意世界事件（暴风/野火/干旱等）的影响
+"""

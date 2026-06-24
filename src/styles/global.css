@@ -1,0 +1,1104 @@
+/* =============================================
+   手账风格全局样式 — 米白纸质 + 手绘贴纸 + 暖色调
+   ============================================= */
+
+/* ── 基础重置 ── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-main);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+button { font-family: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+button:focus { outline: none; }
+
+/* ── 根容器：米白纸质底 ── */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-main);
+  background-image: var(--paper-noise);
+  position: relative;
+}
+
+/* ── 添加手账装饰：横线底纹 ── */
+.app-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grid-lines);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  min-height: 0;
+  z-index: 1;
+}
+
+.map-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* ── 面板：纸质贴纸效果 ── */
+.panel-wrap {
+  width: 380px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  background-image: var(--grid-dots);
+  border-left: 2px dashed var(--border-dashed);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+  /* 右侧面板文字颜色加深 */
+  --text: #2A1F0F;
+  --text-dim: #5C4F3A;
+  --text-accent: #3B2D1D;
+  color: var(--text);
+}
+
+/* 面板顶部装饰：手绘折角 */
+.panel-wrap::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--bg-sticker) 50%, transparent 50%);
+  border-bottom: 2px dashed var(--border-dashed);
+  border-right: 2px dashed var(--border-dashed);
+  z-index: 2;
+}
+
+/* ============ TopBar ============ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(255, 248, 236, 0.92);
+  border-bottom: 2px dashed var(--border-dashed);
+  backdrop-filter: blur(6px);
+  flex-shrink: 0;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 100;
+}
+
+/* 顶栏装饰：顶部手绘波浪线 */
+.topbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--bird) 0px, var(--bird) 8px,
+    var(--butterfly) 8px, var(--butterfly) 16px,
+    var(--herd) 16px, var(--herd) 24px,
+    var(--salmon) 24px, var(--salmon) 32px
+  );
+  opacity: 0.6;
+}
+
+.topbar .title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  font-family: var(--font-hand);
+  text-shadow: 1px 1px 0 rgba(200, 176, 96, 0.25);
+}
+
+.topbar .stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.topbar .stats .stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar .stats .stat strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topbar .stats .stat .label {
+  color: var(--text-dim);
+}
+
+.topbar .stats .stat .stage-species {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.topbar .stats .stat .unit {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-left: 1px;
+}
+
+.topbar .stats .stat .tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar .season-tag.storm { border-color: var(--bird); }
+.topbar .season-tag.drought { border-color: var(--warning); }
+.topbar .season-tag.normal { border-color: var(--success); }
+.topbar .season-tag.storm .dot { background: var(--bird); color: var(--bird); }
+.topbar .season-tag.drought .dot { background: var(--warning); color: var(--warning); }
+.topbar .season-tag.normal .dot { background: var(--success); color: var(--success); }
+
+/* 季节标签：手绘贴纸效果 */
+.season-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-sticker);
+  border: 1.5px dashed var(--border);
+  font-size: 12px;
+  box-shadow: var(--shadow-sticker);
+}
+
+.season-tag .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 4px currentColor;
+}
+
+.season-tag .season-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.segments {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.segments .seg {
+  width: 8px;
+  height: 5px;
+  border-radius: 2px;
+  background: rgba(200, 176, 96, 0.15);
+  border: 1px solid var(--border-light);
+}
+
+.segments .seg.used {
+  background: var(--bird);
+  box-shadow: 0 0 3px var(--bird);
+}
+
+/* 线路段 stat 不换行、不收缩 */
+.line-seg-stat {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+/* ============ SVG Map — 手绘地图风格 ============ */
+.map-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+  background: transparent;
+}
+
+.map-bg { fill: url(#mapGradient); }
+
+/* 迁徙世界压暗效果改为暖色半透明 */
+.migration-world.dimmed {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.map-node { cursor: pointer; transition: filter 0.2s ease; }
+.map-node .node-shape {
+  transition: transform 0.2s ease, fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* 节点snap效果：暖色发光 */
+.map-node.snap .node-shape {
+  transform: scale(1.36);
+  filter: drop-shadow(0 0 10px rgba(90, 172, 200, 0.7));
+}
+
+.map-node.in-route .node-shape {
+  filter: drop-shadow(0 0 8px var(--bird));
+}
+
+.map-node.target-pulse .node-shape {
+  animation: targetPulse 1.2s ease-out;
+}
+
+.map-node.error-flash .node-shape {
+  animation: errorFlash 0.6s ease-out 2;
+}
+
+.map-node.unlock-anim .node-shape {
+  animation: nodeUnlock 0.9s ease-out forwards;
+}
+
+.map-node.unlock-anim .node-name {
+  animation: nameFade 1.4s ease-out forwards;
+}
+
+@keyframes nodeUnlock {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes nameFade {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0.85; }
+}
+
+@keyframes targetPulse {
+  0% { filter: drop-shadow(0 0 0 var(--success)); transform: scale(1); }
+  40% { filter: drop-shadow(0 0 12px var(--success)); transform: scale(1.4); }
+  100% { filter: drop-shadow(0 0 4px var(--success)); transform: scale(1); }
+}
+
+@keyframes errorFlash {
+  0%, 100% { filter: drop-shadow(0 0 0 var(--danger)); }
+  50% { filter: drop-shadow(0 0 10px var(--danger)); }
+}
+
+/* 节点名称：手绘风格 */
+.node-name {
+  font-size: 11px;
+  fill: var(--text);
+  text-anchor: middle;
+  pointer-events: none;
+  font-weight: 500;
+  font-family: var(--font);
+  paint-order: stroke;
+  stroke: rgba(247, 241, 230, 0.9);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.node-name.is-fixed { fill: var(--text-accent); font-weight: 600; }
+
+/* ============ Route Lines — 手绘线条 ============ */
+.route-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.route-line.confirmed {
+  stroke-width: 3;
+  filter: none; /* 手绘风格不需要强发光 */
+}
+
+.route-line.fading {
+  stroke-width: 3;
+  opacity: 0.9;
+}
+
+.route-line.preview {
+  stroke-width: 1.8;
+  stroke-dasharray: 0;
+}
+
+.route-line.preview.overflow {
+  stroke-width: 1.8;
+  opacity: 0.85;
+}
+
+/* ============ Species Marker ============ */
+.species-marker { cursor: grab; pointer-events: all; }
+.species-marker:active { cursor: grabbing; }
+.species-marker.selected .marker-glow {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+.species-marker .timer-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(-90deg);
+}
+.species-marker.warning .timer-ring { animation: warningBlink 0.5s ease-in-out infinite; }
+@keyframes warningBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.species-marker .animal-body { pointer-events: all; }
+
+/* ============ CancelZone — 手绘提醒贴纸 ============ */
+.cancel-zone {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 12px 28px;
+  background: rgba(255, 248, 236, 0.92);
+  border: 1.5px dashed rgba(212, 88, 72, 0.5);
+  border-radius: 12px 8px 14px 6px;
+  color: var(--danger);
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, border-color 0.2s, transform 0.2s;
+  box-shadow: var(--shadow-sticker);
+  z-index: 50;
+  min-width: 240px;
+  font-family: var(--font-hand);
+}
+.cancel-zone.active { opacity: 1; pointer-events: none; }
+.cancel-zone.over {
+  background: rgba(253, 240, 226, 0.96);
+  border-color: var(--danger);
+  border-style: solid;
+  transform: translateX(-50%) scale(1.06);
+  box-shadow: 0 0 16px rgba(212, 88, 72, 0.25), var(--shadow-sticker);
+}
+.cancel-zone .cz-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.cancel-zone .cz-sub { font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
+.cancel-zone.over .cz-sub { color: var(--danger); font-weight: 600; }
+
+/* ============ Species Panel — 手账贴纸面板 ============ */
+.species-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.species-panel .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-dim);
+  gap: 12px;
+  padding: 20px;
+}
+.species-panel .empty .icon { font-size: 32px; opacity: 0.5; }
+.species-panel .empty-sub { font-size: 12px; line-height: 1.6; color: var(--text-dim); }
+
+.species-panel .species-header {
+  --species-color: #5AACC8;
+}
+
+.species-panel h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--species-color);
+  font-family: var(--font-hand);
+}
+
+.species-panel h2 .en {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+/* ============ 横向迁徙线路 (route strip) — 手绘卡片 ============ */
+.route-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 10px 14px;
+  background: var(--bg-sticker);
+  border-radius: 12px 8px 14px 6px;
+  border: 1.5px dashed var(--border);
+  box-shadow: var(--shadow-sticker);
+}
+
+.route-strip-header {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.route-strip-col-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-align: center;
+  font-family: var(--font);
+}
+
+.route-strip-line {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px 0;
+}
+
+.route-strip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--species-color, #5AACC8);
+  flex-shrink: 0;
+  box-shadow: 0 0 4px var(--species-color, #5AACC8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.route-strip-dot.mid-dots {
+  width: auto;
+  height: 10px;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.route-strip-dot .mini-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(74, 63, 47, 0.35);
+  display: inline-block;
+}
+
+.route-strip-segment {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--species-color, #5AACC8) 0%,
+    rgba(200, 176, 96, 0.3) 100%);
+  min-width: 8px;
+  border-radius: 1px;
+}
+
+.route-strip-body {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
+.route-strip-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.route-strip-col-via {
+  gap: 6px;
+}
+
+/* 路线节点卡片：纸质贴纸 */
+.route-node-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  background: var(--bg-sticker);
+  border: 1px solid var(--border-light);
+  border-radius: 8px 4px 10px 6px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.route-node-card-empty {
+  opacity: 0.55;
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-dashed);
+}
+
+.route-node-logo {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.route-node-name {
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.route-node-name-dim {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 10px;
+}
+
+/* 兜底：旧纵向样式不再使用 */
+.route-line-vertical,
+.route-step,
+.step-marker,
+.step-connector,
+.step-content { display: none; }
+
+/* 规则行：手账卡片 */
+.rule-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-sticker);
+  border: 1.5px dashed var(--border);
+  border-radius: 10px 6px 12px 8px;
+  box-shadow: var(--shadow-sticker);
+}
+
+/* 规则分组：手绘框 */
+.rule-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: var(--bg-sticker);
+  border: 1.5px dashed var(--border);
+  border-radius: 12px 8px 14px 6px;
+  box-shadow: var(--shadow-sticker);
+}
+
+.rule-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  font-family: var(--font);
+}
+
+.rule-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.rule-icon.order-icon {
+  color: var(--butterfly, #E8A04C);
+  font-size: 14px;
+}
+
+.rule-icon.forbidden-icon {
+  color: var(--danger, #D45848);
+  font-size: 12px;
+}
+
+.required-waypoints-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.required-waypoint-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(90, 172, 200, 0.25);
+}
+.required-waypoint-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.required-waypoint-detail-label {
+  color: var(--bird);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+.required-waypoint-detail-text {
+  font-size: 11.5px;
+  color: var(--text);
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+.waypoint-chain-arrow {
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  margin: 0 -2px;
+}
+
+.forbidden-nodes-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-height: 132px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.forbidden-nodes-list::-webkit-scrollbar {
+  width: 6px;
+}
+.forbidden-nodes-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.forbidden-nodes-empty {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 4px 0 2px;
+}
+
+/* 节点规则标签：手绘贴纸 */
+.node-rule-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 4px;
+  background: rgba(232, 160, 76, 0.12);
+  border: 1px dashed rgba(232, 160, 76, 0.45);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.2;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.required-waypoint-chip {
+  background: rgba(90, 172, 200, 0.10);
+  border-color: rgba(90, 172, 200, 0.45);
+}
+
+.forbidden-node-chip {
+  background: rgba(212, 88, 72, 0.08);
+  border-color: rgba(212, 88, 72, 0.40);
+}
+
+.node-rule-logo {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.node-rule-label {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.rule-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.rule-value {
+  font-size: 13px;
+  color: var(--text);
+  text-align: right;
+  flex: 1;
+  min-width: 0;
+}
+
+.rule-value .big-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--species-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.rule-value .unit {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.rule-value.risk-text {
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.timer-row .timer-big {
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--species-color);
+  font-family: var(--font-hand);
+}
+.timer-row .timer-big.warning { color: var(--danger); animation: warningBlink 0.5s ease-in-out infinite; }
+
+/* 生态启示：暖色手绘标注 */
+.rule-row.eco-insight-row {
+  background: rgba(108, 192, 128, 0.08);
+  border: 1.5px dashed rgba(108, 192, 128, 0.35);
+  border-left: 3px solid rgba(108, 192, 128, 0.6);
+}
+.rule-row.eco-insight-row .rule-label {
+  color: rgba(108, 192, 128, 0.85);
+}
+.rule-value.eco-insight-text {
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--text-accent);
+  font-style: italic;
+}
+
+/* 成功迁徙得分：暖色手绘标注 */
+.rule-row.success-score-row {
+  background: rgba(90, 172, 200, 0.08);
+  border: 1.5px dashed rgba(90, 172, 200, 0.32);
+  border-left: 3px solid rgba(90, 172, 200, 0.6);
+}
+.rule-row.success-score-row .rule-label {
+  color: rgba(90, 172, 200, 0.85);
+  font-weight: 600;
+}
+.rule-value.success-score-value .big-num {
+  color: rgba(90, 172, 200, 0.95);
+  font-weight: 700;
+}
+
+.rule-row.success-sub-row {
+  background: rgba(247, 241, 230, 0.5);
+  border: 1px dashed var(--border-dashed);
+  padding: 8px 12px;
+}
+.rule-row.success-sub-row .big-num {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 错误提示：手账红色标注 */
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(253, 240, 226, 0.92);
+  border: 1.5px solid var(--danger);
+  border-radius: 10px 6px 12px 8px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.4;
+  animation: errorShake 0.4s ease-in-out;
+  box-shadow: var(--shadow-sticker);
+}
+.error-msg .error-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: var(--bg-sticker);
+  border-radius: 50%;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
+}
+
+.species-panel .hint {
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-dashed);
+  font-family: var(--font);
+}
+
+.species-panel .tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+.species-panel .task-item {
+  padding: 10px 12px;
+  background: var(--bg-sticker);
+  border: 1.5px dashed var(--border);
+  border-radius: 10px 6px 12px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  font-size: 12px;
+  box-shadow: var(--shadow-sticker);
+}
+.species-panel .task-item:hover { border-color: var(--bird); box-shadow: var(--shadow-hover); }
+.species-panel .task-item.selected {
+  border-color: var(--bird);
+  background: rgba(90, 172, 200, 0.08);
+  border-style: solid;
+}
+.species-panel .task-item .mini-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.species-panel .task-item .mini-icon .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.species-panel .task-item .meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.species-panel .task-item .name { color: var(--text); font-weight: 500; }
+.species-panel .task-item .sub { color: var(--text-dim); font-size: 10px; }
+
+/* ============ Toasts — 手账便签条 ============ */
+.toasts {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+  pointer-events: none;
+}
+.toast {
+  padding: 10px 18px;
+  border-radius: 12px 8px 14px 6px;
+  background: rgba(255, 248, 236, 0.96);
+  border: 1.5px dashed var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font-hand);
+  box-shadow: var(--shadow-sticker);
+  animation: toastIn 0.3s ease-out;
+  max-width: 80vw;
+  text-align: center;
+}
+.toast.error { border-color: var(--danger); color: var(--danger); border-style: solid; }
+.toast.success { border-color: var(--success); color: var(--success); border-style: solid; }
+.toast.info { border-color: var(--bird); color: var(--bird); border-style: solid; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ Game Over Modal — 手账信封卡片 ============ */
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(200, 176, 96, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  background: var(--bg-paper);
+  background-image: var(--grid-dots);
+  border: 2px dashed var(--border);
+  border-radius: 16px 12px 18px 10px;
+  padding: 36px 48px;
+  text-align: center;
+  box-shadow: var(--shadow-modal);
+  min-width: 320px;
+  animation: modalIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+/* 弹窗装饰：顶部手绘色条 */
+.modal-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--bird) 0px, var(--bird) 8px,
+    var(--butterfly) 8px, var(--butterfly) 16px,
+    var(--herd) 16px, var(--herd) 24px,
+    var(--salmon) 24px, var(--salmon) 32px
+  );
+  opacity: 0.7;
+  border-radius: 16px 12px 0 0;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-card h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-family: var(--font-hand);
+  text-shadow: 2px 2px 0 rgba(200, 176, 96, 0.2);
+}
+
+.modal-card .subtitle {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.modal-card .stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.modal-card .stats .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-sticker);
+  border: 1px dashed var(--border-light);
+  border-radius: 8px 4px 10px 6px;
+  font-size: 13px;
+  box-shadow: var(--shadow-sticker);
+}
+
+.modal-card .stats .row .label { color: var(--text-dim); }
+.modal-card .stats .row .value { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.modal-card .stats .row .value .unit { color: var(--text-dim); font-weight: 400; font-size: 11px; margin-left: 2px; }
+
+.modal-card button.restart {
+  padding: 10px 24px;
+  background: var(--bg-sticker);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  border: 2px dashed var(--border);
+  border-radius: 12px 8px 14px 6px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  font-family: var(--font-hand);
+  box-shadow: var(--shadow-sticker);
+}
+.modal-card button.restart:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--bird);
+}
+
+@media (max-width: 768px) {
+  .app-root { font-size: 14px; }
+  .main-area { flex-direction: column; }
+  .panel-wrap {
+    width: 100%;
+    border-left: none;
+    border-top: 2px dashed var(--border-dashed);
+    max-height: 40vh;
+  }
+  .topbar { padding: 8px 12px; gap: 8px; font-size: 12px; }
+  .topbar .stats { gap: 10px; flex-wrap: wrap; }
+  .topbar .title { font-size: 14px; }
+  .cancel-zone { padding: 14px 20px; min-width: 200px; }
+  .node-name { font-size: 9px; }
+}

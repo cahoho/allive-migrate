@@ -1,0 +1,68 @@
+/* =============================================
+   手账风格设计Token体系 — 米白暖色 + 手绘质感
+   ============================================= */
+:root {
+  /* ── 背景层 ── */
+  --bg-main: #F7F1E6;            /* 米白底色：温暖的奶油米白 */
+  --bg-panel: #FFF8EC;           /* 面板底色：更暖的淡米黄 */
+  --bg-panel-2: #F0E8D4;         /* 内嵌面板：略深的暖麦色 */
+  --bg-paper: #FDF6E3;           /* 纸质纹理底色 */
+  --bg-sticker: #FFFEF5;         /* 贴纸底色：近乎白但带暖调 */
+
+  /* ── 文字层 ── */
+  --text: #4A3F2F;               /* 主文字：温暖深棕墨色 */
+  --text-dim: #8B7D6B;           /* 次文字：浅棕 */
+  --text-accent: #6B5D4D;        /* 强调文字：中棕 */
+  --text-on-sticker: #5C4F3A;    /* 贴纸上的文字 */
+
+  /* ── 边框 ── */
+  --border: #D4C4A8;             /* 牛皮纸色边框 */
+  --border-light: #E8DCC8;       /* 浅色边框 */
+  --border-dashed: #C8B898;      /* 手绘虚线边框 */
+
+  /* ── 物种主题色（柔和暖色调版本） ── */
+  --bird: #5AACC8;               /* 暖天蓝：鸟类的柔和蓝 */
+  --butterfly: #E8A04C;          /* 暖琥珀：蝶类的柔橘 */
+  --salmon: #5C94C0;             /* 暖海蓝：鱼类的柔蓝绿 */
+  --herd: #C8B060;               /* 暖麦金：兽类的柔金 */
+
+  /* ── 语义色 ── */
+  --danger: #D45848;             /* 手账红：柔和砖红 */
+  --success: #6CC080;            /* 手账绿：柔和叶绿 */
+  --warning: #E8C050;            /* 手账黄：柔和暖黄 */
+  --info: #5AACC8;               /* 手账蓝：与bird色一致 */
+
+  /* ── 节点 ── */
+  --node-default: #FFF8EC;       /* 默认节点：暖米白 */
+  --node-muted: #A89480;         /* 静默节点：浅棕 */
+
+  /* ── 预览线 ── */
+  --line-preview: rgba(74, 63, 47, 0.35);
+
+  /* ── 阴影 ── */
+  --shadow: 0 4px 16px rgba(90, 70, 50, 0.10);
+  --shadow-sticker: 0 2px 8px rgba(90, 70, 50, 0.15), 0 1px 3px rgba(90, 70, 50, 0.08);
+  --shadow-hover: 0 6px 20px rgba(90, 70, 50, 0.18);
+  --shadow-modal: 0 20px 60px rgba(90, 70, 50, 0.22);
+
+  /* ── 圆角 ── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-sticker: 12px 8px 14px 6px;  /* 不对称圆角：模拟贴纸 */
+
+  /* ── 字体 ── */
+  --font-hand: 'ZCOOL KuaiLe', 'Ma Shan Zheng', 'STKaiti', 'Kaiti SC', 'FangSong', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font: 'STKaiti', 'Kaiti SC', 'FangSong', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+
+  /* ── 纹理与图案 ── */
+  --paper-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  --grid-dots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='0.8' fill='%23C8B898' opacity='0.3'/%3E%3C/svg%3E");
+  --grid-lines: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cline x1='0' y1='24' x2='24' y2='24' stroke='%23C8B898' stroke-width='0.5' opacity='0.25'/%3E%3C/svg%3E");
+
+  /* ── 过渡 ── */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+}

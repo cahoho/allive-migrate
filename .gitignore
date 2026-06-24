@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# TypeScript output
+tsc.out
+tsc.out.new
+tsc.out2
+
+# Log files
+*.log
+
+# Generated audio
+output/
+
+# IDE / local settings
+.codebuddy/settings.local.json
+.codebuddy/integration/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tencent Cloud EdgeOne
+.env
+.edgeone/*
+.tef_dist/*
+  
