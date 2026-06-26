@@ -36,6 +36,12 @@ export function useGameLoop() {
     }
 
     gameStore.tickGame(dt)
+
+    // 调试：检测 gameOver 在 gameStarted=true 但 survivalTime=0 时触发
+    if (gameStore.state.gameStarted && gameStore.state.gameOver && gameStore.state.survivalTime === 0) {
+      console.log('[useGameLoop] ⚠️ gameOver=true 时 survivalTime=0, elapsedTime=', gameStore.state.elapsedTime, 'activeTasks=', gameStore.state.activeTasks.length)
+    }
+
     rafId = requestAnimationFrame(tick)
   }
   rafId = requestAnimationFrame(tick)

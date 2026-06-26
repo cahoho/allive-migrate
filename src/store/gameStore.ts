@@ -173,11 +173,21 @@ function blankState(): GameState {
 
     // 暂停原因集合：每帧 / 每次 tickGame 都从这里查询
     // 唯一初始化入口：blankState() / initGame()
-    pauseReasons: []
+    pauseReasons: [],
+
+    // Supabase 数据库集成字段
+    sessionToken: null,
+    scoreSubmitted: false,
+    playerNickname: '',
+    serverSeed: null,
   }
 }
 
 const state = reactive<GameState>(blankState())
+
+// 节点命中时间戳（用于触发动效）：{ nodeId → timestamp }
+// MapNode 组件读取并在命中 500ms 内显示礼花 + 震动效果
+const nodeHitTimestamps = reactive<Record<string, number>>({})
 
 // 全局 RNG
 let rng: SeededRandom = new SeededRandom(state.seed)
@@ -193,6 +203,11 @@ function pushToast(text: string, kind: ToastMsg['kind'] = 'info', durationMs = 2
 
 /** 初始化新对局 */
 function initGame(seed?: number) {
+  // 保存跨对局状态
+  const savedNickname = state.playerNickname
+  const savedToken = state.sessionToken
+  const savedServerSeed = state.serverSeed
+
   if (seed !== undefined) {
     state.seed = seed
   } else {
@@ -271,6 +286,12 @@ function initGame(seed?: number) {
 
   // 暂停原因集合：每次 initGame / restart 都彻底清空
   state.pauseReasons = []
+
+  // 恢复跨对局状态（昵称、会话令牌）
+  state.playerNickname = savedNickname
+  state.sessionToken = savedToken
+  state.serverSeed = savedServerSeed
+  state.scoreSubmitted = false
 
   // 生态健康：清空跨帧状态缓存
   lastEcoStates = new Map()
@@ -694,8 +715,12 @@ function bumpSpeciesFailure(speciesId: string): boolean {
   const before = getSpeciesFailureCount(speciesId)
   const after = before + 1
   state.speciesFailureCounts[speciesId] = after
-  if (after < SPECIES_EXTINCTION_FAILURES) return false
+  if (after < SPECIES_EXTINCTION_FAILURES) {
+    console.log(`[bumpSpeciesFailure] ${speciesId} 失败 ${after}/${SPECIES_EXTINCTION_FAILURES} (未灭绝)`)
+    return false
+  }
   // 灭绝
+  console.log(`[bumpSpeciesFailure] ⚠️ ${speciesId} 已灭绝! failures=${after}, unlocked=${state.unlockedSpeciesIds}, extinct=${[...state.extinctSpeciesIds, speciesId]}`)
   state.extinctSpeciesIds.push(speciesId)
   cleanupSpeciesTasks(speciesId)
   bumpMapRevision()
@@ -746,14 +771,22 @@ function cleanupSpeciesTasks(speciesId: string): void {
  */
 function checkBiodiversityGameOver(): void {
   if (state.gameOver) return
+  // 教程阶段不允许 gameOver：教程中 gameStarted=false，
+  // 此时 tickGame 不再处理任务超时，但 tutorial 内部可能间接触发该检查。
+  // 没有真正开始游戏就不能判定生态崩溃。
+  if (!state.gameStarted) return
   const pct = getBiodiversityPercent()
   if (pct <= BIODIVERSITY_FAILURE_THRESHOLD) {
+    console.trace('[checkBiodiversityGameOver] 触发 gameOver', { pct, stage: state.stage, gameStarted: state.gameStarted, unlocked: state.unlockedSpeciesIds.length, extinct: state.extinctSpeciesIds.length })
     state.gameOver = true
+    state.survivalTime = state.elapsedTime // 确保 survivalTime 在 gameOver 瞬间已被封存
     pushToast(
       `物种多样性已降至 ${pct.toFixed(1)}%，生态崩溃`,
       'error',
       4500
     )
+  } else {
+    console.log('[checkBiodiversityGameOver] 未触发', { pct, stage: state.stage, threshold: BIODIVERSITY_FAILURE_THRESHOLD })
   }
 }
 
@@ -1419,6 +1452,7 @@ function scheduleTaskCleanup(taskId: string) {
 function failTask(taskId: string) {
   const task = state.activeTasks.find((t) => t.id === taskId)
   if (!task) return
+  console.log(`[failTask] ${task.speciesId} 任务失败, remaining=${task.remaining?.toFixed(2)}, status=${task.status}, gameStarted=${state.gameStarted}, failures=${state.failures + 1}`)
   // 兼容旧字段：state.failures 仍累加，但不再作为游戏失败判定
   state.failures += 1
   const extinctThisFrame = bumpSpeciesFailure(task.speciesId)
@@ -1507,6 +1541,7 @@ function pushDragNode(nodeId: string) {
   // 只有 path 长度 >= 2 时才响（第一个节点是起点，不算"经过"）
   if (state.dragState.path.length >= 2) {
     playRouteSelect()
+    nodeHitTimestamps[nodeId] = performance.now()
   }
   // 新增节点后清掉 previewHumanBlocked：玩家已经从该节点继续拖线
   state.dragState.previewHumanBlocked = false
@@ -1588,14 +1623,21 @@ function startGame(): void {
   if (state.gameStarted) return
   if (state.gameOver) return
 
+  console.log('[startGame] gameStarted=true, 当前 activeTasks:', state.activeTasks.length, 'waiting:', state.activeTasks.filter(t => t.status === 'waiting').length)
   state.gameStarted = true
   state.survivalTime = 0
 
-  // 开局不空场：直接补 2 个任务（候鸟 + 蝴蝶 等已解锁物种随机）
-  // 后续补任务由 tickGame 的 spawn timer 控制，节奏放缓
-  const initialSpawn = Math.min(1, state.maxConcurrent)
+  // 清除所有旧任务残留（如教程阶段留下的 status 异常的任务）
+  state.activeTasks = state.activeTasks.filter(
+    (t) => t.status === 'waiting' || t.status === 'migrating'
+  )
+
+  // 开局不空场：直接补 1 个任务
+  const initialSpawn = 1
   let spawned = 0
   let guard = 0
+
+  // 先尝试随机物种
   while (spawned < initialSpawn && guard < initialSpawn * 6) {
     guard++
     if (tryGenerateTask()) {
@@ -1605,15 +1647,43 @@ function startGame(): void {
     }
   }
 
-  // 如果已经完成迁徙后再次 startGame，避免地图空
+  // 如果随机物种失败，直接强制候鸟（不经过 quick check）
   if (spawned === 0) {
+    console.warn('[startGame] 随机物种任务生成失败，兜底使用候鸟')
     ensureStarterNodesForBird()
     bumpMapRevision()
-    while (spawned < initialSpawn && guard < initialSpawn * 8) {
-      guard++
-      if (tryGenerateTask()) spawned++
-      else break
+    // 直接调用 generateTask，跳过 canSpawnSolvableTaskQuick
+    const sp = findSpecies('bird')
+    if (sp) {
+      const forcedTask = generateTask({
+        rng,
+        species: sp,
+        nodes: state.mapNodes,
+        elapsedTime: 0,
+        season: state.season,
+        skipSolvabilityCheck: true, // 跳过快速检查，内部 findSolvableRoute 兜底
+      })
+      if (forcedTask) {
+        state.activeTasks.push(forcedTask)
+        state.selectedTaskId = forcedTask.id
+        spawned++
+      }
     }
+  }
+
+  // 如果还是失败，重新生成地图后再试
+  if (spawned === 0) {
+    console.warn('[startGame] 候鸟任务仍然失败，重新生成地图')
+    for (let retry = 0; retry < 5 && spawned === 0; retry++) {
+      state.mapNodes = generateInitialMap(rng, 1)
+      ensureEcoFieldsFor(state.mapNodes)
+      bumpMapRevision()
+      if (tryGenerateTask('bird')) spawned++
+    }
+  }
+
+  if (spawned === 0) {
+    console.error('[startGame] 无法生成任何任务！游戏可能立即结束')
   }
 }
 
@@ -1828,6 +1898,7 @@ function refreshVisualPositions() {
 
 export const gameStore = {
   state,
+  nodeHitTimestamps,
   rng,
   initGame,
   restart,

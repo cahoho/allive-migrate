@@ -10,12 +10,13 @@ import {
 } from '../data/speciesTemplates'
 import SpeciesIconComp from './SpeciesIcon.vue'
 import { waypointLabelFor } from '../data/nodeVisuals'
+import { useSupabase } from '../composables/useSupabase'
+
+const emit = defineEmits<{
+  openRanking: []
+}>()
 
 const year = computed(() => gameStore.state.year)
-// 严格分离的两份数据：
-// - totalSuccess: 成功迁徙次数（整数计数，仅用于阶段解锁 / 难度推进）
-// - score       : 迁徙得分（按 species.successScore 加权求和，浮点）
-// 顶栏把两个字段并列展示，文字 / 单位都不同，避免玩家把"次数"和"得分"混淆
 const totalSuccess = computed(() => gameStore.state.totalSuccess)
 const score = computed(() => gameStore.state.score)
 const usedSegments = computed(() => gameStore.state.usedSegments)
@@ -25,16 +26,14 @@ const stage = computed(() => gameStore.state.stage)
 const maxConcurrent = computed(() => gameStore.state.maxConcurrent)
 const season = computed(() => gameStore.state.season)
 const gameStarted = computed(() => gameStore.state.gameStarted)
+const nickname = computed(() => gameStore.state.playerNickname || '迁徙者')
 
-/** 物种多样性百分比（0~100，1 位小数） */
 const biodiversityPercent = computed(() => {
   return gameStore.getBiodiversityPercent()
 })
 
-/** 物种多样性文字 */
 const biodiversityText = computed(() => `${biodiversityPercent.value.toFixed(1)}%`)
 
-/** 多样性颜色：>= 66% 正常；< 66% 黄；< 33.4% 红 */
 const biodiversityClass = computed(() => {
   const v = biodiversityPercent.value
   if (v < 33.4) return 'biodiv-red'
@@ -42,12 +41,18 @@ const biodiversityClass = computed(() => {
   return 'biodiv-normal'
 })
 
-/**
- * 物种 logo 列表：固定渲染 4 个已知物种（候鸟 / 蝴蝶 / 鲑鱼 / 草原兽群）
- * - 未解锁：灰色 + 低透明 + grayscale
- * - 已解锁存活：正常亮色
- * - 已灭绝：暗红色
- */
+// 实时排名按钮
+const { isConfigured } = useSupabase()
+
+function openRanking() {
+  if (!isConfigured()) return
+  emit('openRanking')
+  gameStore.setGameplayPause('ranking', true)
+}
+
+// ============================================================
+// 物种 logo 下方数据（已有逻辑，不动）
+// ============================================================
 interface SpeciesLogoView {
   id: string
   name: string
@@ -77,12 +82,6 @@ const speciesLogos = computed<SpeciesLogoView[]>(() => {
   })
 })
 
-/**
- * v13：物种 logo 改成"小按钮"
- * - 单击展开聊天气泡（在 logo 下方），外部点击 / 再次点击同一 logo 时收回
- * - 不依赖 hover 延时
- * - 聊天气泡内容：物种名 / 状态 / 失败计数 / 解锁阶段 / 必经点 / 风险描述 / 生态启示
- */
 const openSpeciesId = ref<string | null>(null)
 
 function toggleSpeciesBubble(id: string): void {
@@ -93,11 +92,6 @@ function closeSpeciesBubble(): void {
   openSpeciesId.value = null
 }
 
-/**
- * 外部点击关闭气泡
- * - 使用 capture 模式以在 SVG / 子组件处理事件前生效
- * - 通过 data-bubble-anchor / data-bubble-card 标记气泡区域
- */
 function onDocumentPointerDown(e: PointerEvent): void {
   if (openSpeciesId.value === null) return
   const target = e.target as HTMLElement | null
@@ -114,7 +108,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPointerDown, true)
 })
 
-/** 当前打开气泡的物种详情 */
 interface SpeciesBubbleData {
   id: string
   name: string
@@ -124,11 +117,8 @@ interface SpeciesBubbleData {
   state: 'locked' | 'alive' | 'extinct'
   stateLabel: string
   failures: number
-  /** 该物种已成功迁徙次数 */
   successes: number
-  /** 单次成功迁徙得分 */
   successScore: number
-  /** 该物种累计贡献的迁徙得分 = successes × successScore */
   successContribution: number
   unlockStage: number
   waypointText: string
@@ -155,15 +145,10 @@ const openBubble = computed<SpeciesBubbleData | null>(() => {
       : state === 'extinct'
       ? `已灭绝（失败 ${SPECIES_EXTINCTION_FAILURES} / ${SPECIES_EXTINCTION_FAILURES}）`
       : '未解锁'
-  // 解锁阶段：单一事实源（speciesTemplates.ts 中的 SPECIES_UNLOCK_STAGES）
   const unlockStage = SPECIES_UNLOCK_STAGES[sp.id] ?? 1
-  // 必经点描述：tag / node / any
-  // 统一通过 waypointLabelFor 渲染，确保与 SpeciesPanel / 路线条 UI 文本一致。
-  // 不再在调用方硬编码"（任一候选节点）"，文案全部来自单一事实源。
   const waypointText = sp.requiredWaypoints?.length
     ? sp.requiredWaypoints.map(waypointLabelFor).join(' → ')
     : '无'
-  // v5：单次成功迁徙得分与该物种累计贡献得分
   const successScore = sp.successScore
   const successContribution = Math.round(sc * successScore * 100) / 100
   return {
@@ -187,11 +172,6 @@ const openBubble = computed<SpeciesBubbleData | null>(() => {
   }
 })
 
-/**
- * v11：把"坚持秒数"格式化为自然语言
- * - < 60s  : 坚持了 38 秒
- * - >= 60s : 坚持了 2 分 15 秒
- */
 function formatSurvival(sec: number): string {
   const s = Math.max(0, Math.floor(sec))
   if (s < 60) return `坚持了 ${s} 秒`
@@ -222,15 +202,6 @@ const stageHint = computed(() => {
   return '全部物种'
 })
 
-/**
- * 格式化"随机中转点"描述，用于气泡
- * - 没有 waypointPicker 或 maxCount <= 0：返回 "无"
- * - minCount == maxCount：显示固定值
- * - 否则显示区间
- *
- * waypointPicker 现在只包含 { minCount, maxCount }，不再有 tagPool / eligibleTags。
- * 候选节点由 allowedNodeTags / 风险 / 人类阻挡等规则自动筛选。
- */
 function formatRandomRequirement(sp: SpeciesDef): string {
   const p = sp.waypointPicker
   if (!p || p.maxCount <= 0) return '无'
@@ -238,15 +209,6 @@ function formatRandomRequirement(sp: SpeciesDef): string {
   return `${countText} 个随机中转点（任意可通行节点）`
 }
 
-/**
- * 格式化"移动速度"描述：分档说明物种迁徙速度分类
- * 与 speciesTemplates 中 migrationSpeed 字段保持一致：
- * - 0.4 ~ 0.5  极快：高强度飞行迁徙（斑头雁/雁鸭候鸟）
- * - 0.5 ~ 0.9  较快：昆虫或普通飞行迁徙（帝王蝶）
- * - 0.9 ~ 1.8  中等：水生洄游（鲑鱼/美洲鳗）
- * - 1.8 ~ 5.5  慢：海洋爬行动物迁徙（绿海龟）
- * - >= 5.5     极慢：陆地/两栖迁徙（角马兽群/林蛙）
- */
 function formatSpeed(sp: SpeciesDef): string {
   const v = sp.migrationSpeed
   if (v <= 0.5) return '极快：高强度飞行迁徙'
@@ -255,11 +217,40 @@ function formatSpeed(sp: SpeciesDef): string {
   if (v <= 5.5) return '慢：海洋爬行动物迁徙'
   return '极慢：陆地/两栖迁徙，容易被追击'
 }
+
 </script>
 
 <template>
   <div class="topbar">
-    <div class="title">众生迁徙 · Allive Migration</div>
+    <!-- 第一行：标题 + 季节提示 + 用户区域（昵称 + 实时排名按钮） -->
+    <div class="title-row">
+      <span class="title">众生迁徙 · Allive Migration</span>
+
+      <span
+        v-if="gameStarted"
+        class="season-inline"
+        :class="seasonClass"
+        :title="seasonInfo.description"
+      >
+        <span class="dot"></span>
+        {{ seasonInfo.description }}
+      </span>
+
+      <div class="user-actions">
+        <span class="nickname-badge">{{ nickname }}</span>
+        <button
+          type="button"
+          class="ranking-btn"
+          :disabled="!isConfigured() || !gameStarted"
+          :title="!isConfigured() ? '排行榜需要连接服务器' : !gameStarted ? '游戏开始后可查看' : '查看实时排名'"
+          @click="openRanking"
+        >
+          🏆 实时排名
+        </button>
+      </div>
+    </div>
+
+    <!-- 第二行：统计面板 -->
     <div class="stats">
       <div class="stat"><span class="label">第</span><strong>{{ year }}</strong><span class="label">年</span></div>
       <div class="stat">
@@ -267,18 +258,7 @@ function formatSpeed(sp: SpeciesDef): string {
         <strong>{{ stage }}</strong>
         <span class="stage-species">{{ stageHint }}</span>
       </div>
-      <div class="season-tag" :class="seasonClass">
-        <span class="dot"></span>
-        <span>{{ seasonInfo.name }}</span>
-        <span class="season-desc">{{ seasonInfo.description }}</span>
-      </div>
       <div class="stat"><span class="label">生态节点：</span><strong>{{ nodeCount }}</strong></div>
-      <!--
-        v5：严格分离"成功迁徙数量"与"迁徙得分"
-        - 成功迁徙：只递增 1 次/次，衡量完成任务的次数
-        - 迁徙得分：按 species.successScore 加权求和，衡量生态保护价值
-        - 两者数值不再相等（如 1 次林蛙迁徙 = 1 次 / 3.8 分；2 次候鸟 = 2 次 / 2.0 分）
-      -->
       <div
         class="stat"
         title="成功迁徙次数：完成迁徙任务的总数（仅用于阶段解锁与失败判定）"
@@ -295,7 +275,6 @@ function formatSpeed(sp: SpeciesDef): string {
         <strong class="tabular">{{ score.toFixed(1) }}</strong>
         <span class="unit">分</span>
       </div>
-      <!-- v13：intro 引导第 7 步把"物种多样性 + 物种 logo"整体圈起来讲解失败判定 -->
       <div
         class="biodiv-species-cluster"
         data-tutorial-target="biodiv-and-species"
@@ -318,12 +297,10 @@ function formatSpeed(sp: SpeciesDef): string {
             :aria-label="`${sp.state === 'locked' ? '未知物种' : sp.name} ${sp.state === 'locked' ? '未解锁' : sp.state === 'alive' ? '存活' : '已灭绝'}`"
             @click="toggleSpeciesBubble(sp.id)"
           >
-            <!-- v13：未解锁物种用问号占位，不暴露真实物种形象 -->
             <span v-if="sp.state === 'locked'" class="species-logo-unknown" aria-hidden="true">?</span>
             <SpeciesIconComp v-else :type="sp.icon" :color="sp.color" :size="20" />
           </button>
         </div>
-        <!-- 聊天气泡：固定位置 / 顶在 chip 容器下方 -->
         <div
           v-if="openBubble"
           class="species-bubble"
@@ -362,12 +339,6 @@ function formatSpeed(sp: SpeciesDef): string {
                 <span class="bubble-label">解锁阶段</span>
                 <span class="bubble-value">第 {{ openBubble.unlockStage }} 阶段</span>
               </div>
-              <!--
-                v5：成功迁徙得分（与"成功迁徙次数"严格分开）
-                - 得分：species.successScore（每次该物种成功迁徙后获得的迁徙得分）
-                - 累计：successes × successScore（该物种对总迁徙得分的贡献）
-                - 跟顶栏"迁徙得分"的区别：顶栏是 Σ 全部物种的贡献
-              -->
               <div
                 class="bubble-row bubble-row-score"
                 :title="`每次成功迁徙将获得 ${openBubble.successScore.toFixed(1)} 分迁徙得分`"
@@ -417,9 +388,7 @@ function formatSpeed(sp: SpeciesDef): string {
         </div>
       </div>
       </div>
-      <!-- /biodiv-species-cluster -->
 
-      <!-- v11：坚持时间，仅在游戏开始后显示 -->
       <div v-if="gameStarted" class="stat survival-stat" title="从点击【开始游戏】起计时">
         <span class="label">⏱</span>
         <strong class="survival-text">{{ survivalText }}</strong>
@@ -435,13 +404,174 @@ function formatSpeed(sp: SpeciesDef): string {
         </div>
         <strong style="font-variant-numeric: tabular-nums;">{{ usedSegments }} / {{ maxSegments }}</strong>
       </div>
-
-      <!-- v13：迁徙/人类活动切换按钮已迁移到 GameMap 右上方 -->
     </div>
   </div>
 </template>
 
 <style scoped>
+/* ============================================================ */
+/* 第一行：标题行 */
+/* ============================================================ */
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px 4px;
+  min-height: 34px;
+}
+
+.title {
+  font-family: var(--font-hand);
+  font-size: 15px;
+  font-weight: 700;
+  color: #c0d4c0;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 季节内联提示 — 极小，在标题右侧 */
+.season-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.season-inline .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 季节颜色 */
+.season-inline.spring {
+  background: rgba(108, 192, 128, 0.12);
+  color: #7cd494;
+  border-color: rgba(108, 192, 128, 0.2);
+}
+.season-inline.spring .dot { background: #7cd494; }
+
+.season-inline.summer {
+  background: rgba(232, 192, 80, 0.12);
+  color: #e8c050;
+  border-color: rgba(232, 192, 80, 0.2);
+}
+.season-inline.summer .dot { background: #e8c050; }
+
+.season-inline.autumn {
+  background: rgba(210, 150, 80, 0.12);
+  color: #d29650;
+  border-color: rgba(210, 150, 80, 0.2);
+}
+.season-inline.autumn .dot { background: #d29650; }
+
+.season-inline.winter {
+  background: rgba(130, 180, 210, 0.12);
+  color: #82b4d2;
+  border-color: rgba(130, 180, 210, 0.2);
+}
+.season-inline.winter .dot { background: #82b4d2; }
+
+/* 用户操作区域 — 推到最右侧 */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nickname-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a0c8a0;
+  padding: 3px 10px;
+  background: rgba(108, 192, 128, 0.08);
+  border: 1px solid rgba(108, 192, 128, 0.15);
+  border-radius: 12px;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ranking-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 12px;
+  background: rgba(90, 172, 200, 0.1);
+  border: 1px solid rgba(90, 172, 200, 0.2);
+  border-radius: 12px;
+  color: #80bcd4;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.ranking-btn:hover:not(:disabled) {
+  background: rgba(90, 172, 200, 0.18);
+  border-color: rgba(90, 172, 200, 0.35);
+  color: #a0d4e8;
+}
+
+.ranking-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 切换身份按钮 */
+.switch-identity-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(160, 190, 160, 0.5);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.switch-identity-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(200, 220, 200, 0.85);
+}
+
+/* 切换身份按钮 */
+.switch-identity-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(160, 190, 160, 0.5);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.switch-identity-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(200, 220, 200, 0.85);
+}
+
+/* ============================================================ */
+/* 保留的已有样式（物种 logo、气泡、生存时间等） */
+/* ============================================================ */
 .survival-stat {
   padding: 3px 10px;
   background: rgba(108, 192, 128, 0.08);
@@ -455,7 +585,6 @@ function formatSpeed(sp: SpeciesDef): string {
   font-family: var(--font-hand);
 }
 
-/* ============ 物种多样性 + 物种 logo ============ */
 .biodiv-species-cluster {
   display: inline-flex;
   align-items: center;
@@ -503,10 +632,9 @@ function formatSpeed(sp: SpeciesDef): string {
 .species-logos-stat {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
-  max-width: 260px;
   padding: 3px 6px;
   background: var(--bg-sticker);
   border-radius: 10px 6px 12px 8px;
@@ -577,7 +705,7 @@ function formatSpeed(sp: SpeciesDef): string {
   filter: hue-rotate(310deg) saturate(2.4) brightness(0.55);
 }
 
-/* ============ 聊天气泡 — 手账贴纸卡片 ============ */
+/* 聊天气泡 */
 .species-bubble {
   position: absolute;
   top: calc(100% + 10px);
@@ -727,7 +855,6 @@ function formatSpeed(sp: SpeciesDef): string {
   line-height: 1.55;
 }
 
-/* 成功迁徙得分（手账蓝色标注） */
 .bubble-row.bubble-row-score {
   margin-top: 4px;
   padding: 6px 8px;

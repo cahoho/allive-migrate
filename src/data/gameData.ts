@@ -157,10 +157,10 @@ export interface ToastMsg {
  * 游戏暂停原因集合：
  * - 不再使用单个 isPaused 布尔，避免多个暂停来源互相覆盖
  * - 使用原因字符串集合：每个来源 add/remove 自己的原因
- * - 当前唯一来源：'human-tutorial' 人类活动教程
+ * - 当前来源：'human-tutorial' 人类活动教程 / 'ranking' 实时排名查看
  * - 未来可扩展，例如 'modal-open' / 'cutscene' 等
  */
-export type GamePauseReason = 'human-tutorial'
+export type GamePauseReason = 'human-tutorial' | 'ranking'
 
 export interface GameState {
   seed: number
@@ -292,6 +292,18 @@ export interface GameState {
   tutorialCompletedHuman: boolean
   /** 教学专用任务是否已生成（用于 Step 6 等待玩家操作） */
   tutorialTaskId: string | null
+
+  // ============================================================
+  // Supabase 数据库集成字段
+  // ============================================================
+  /** 服务端签名的会话令牌（反作弊） */
+  sessionToken: string | null
+  /** 本局分数是否已提交到服务器 */
+  scoreSubmitted: boolean
+  /** 玩家昵称（在 NicknameInput 中输入） */
+  playerNickname: string
+  /** 服务端分配的随机种子（用于替换本地种子，防篡改） */
+  serverSeed: number | null
 }
 
 export type TutorialShape = 'circle' | 'rect' | 'line'
